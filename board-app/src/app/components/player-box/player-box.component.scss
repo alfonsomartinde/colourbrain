@@ -1,0 +1,38 @@
+.player-points {
+    align-items: center;
+    background-color: #faebd7;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    height: 105px;
+    justify-content: center;
+    margin: 5px;
+    width: 110px;
+    color: #000;
+  }
+  
+  .player-points p {
+
+    display: block;
+    font-size: 5rem;
+    font-weight: 700;
+    height: 28px;
+    line-height: 1rem;
+    margin: 0
+  }
+  
+  .player-points.is-winner {
+    background-color: #29d267;
+    color: #fff;
+  }
+  
+  .player-answers {
+    display: flex;
+    flex-wrap: wrap
+  }
+  
+  
+  .player-name {
+    font-size: 20px;
+    font-weight: 700;
+  }

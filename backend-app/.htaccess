@@ -1,0 +1,10 @@
+Options -MultiViews
+DirectoryIndex public/index.php
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /obs/colourbrain/backend-app/
+  RewriteRule ^public/ - [L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule ^(.*)$ public/$1 [QSA,L]
+</IfModule>

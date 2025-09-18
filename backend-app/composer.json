@@ -1,0 +1,19 @@
+{
+  "autoload": {
+    "psr-4": {
+      "App\\": "src/"
+    }
+  },
+  "description": "Backend PHP Slim 4 para ColourBrain Twitch",
+  "name": "sportiariders/colourbrain-backend",
+  "require": {
+    "php": ">=8.2",
+    "slim/psr7": "^1.5",
+    "slim/slim": "^4.12",
+    "vlucas/phpdotenv": "^5.6"
+  },
+  "scripts": {
+    "start": "php -S localhost:8080 -t public"
+  },
+  "type": "project"
+}

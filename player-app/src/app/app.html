@@ -1,0 +1,63 @@
+@if (playerId() === null) {
+  <div class="player-container">
+    <h2>Selecciona tu equipo</h2>
+    <div class="team-chooser">
+      @for (p of players(); track p.id) {
+        <button (click)="onSelectTeam(p.id)">{{ p.name }}</button>
+      }
+    </div>
+  </div>
+} @else {
+  <div class="player-container">
+    <header class="header">
+      <div class="header-left">
+        <h1 class="team-label">{{ currentTeamLabel() }}</h1>
+        <div class="team-points">Puntos: {{ currentTeamPoints() }}</div>
+      </div>
+      <div class="header-center">
+        <div class="header-label">Tiempo restante</div>
+        <div class="countdown">{{ secondsLeft() === null ? '-' : secondsLeft() + 's' }}</div>
+      </div>
+      <div class="header-center">
+        <div class="header-label">Valor de la pregunta</div>
+        <div class="question-reward">{{ currentReward() }}</div>
+      </div>
+      <div class="header-right">
+        <div class="header-label">Turno</div>
+        <div class="turn-number">{{ turn() }}</div>
+        
+      </div>
+    </header>
+ 
+    <h2 class="question-text">
+      {{ state()?.active_question?.text }}
+      @if (state()?.active_question?.requiredColorsCount; as n) {
+        <span class="hint">({{ n }})</span>
+      }
+    </h2>
+
+    <div class="colors-container">
+      @for (color of colors(); track color.id) {
+        <button
+          class="color-button"
+          [class.selected]="selectedColors().includes(color.id)"
+          [class.disabled]="secondsLeft() === 0 || secondsLeft() === null"
+          [style.background-color]="color.hexValue"
+          (click)="handleColorClick(color.id)"
+          [disabled]="secondsLeft() === 0 || secondsLeft() === null"
+        >
+          @if (selectedColors().includes(color.id)) { 
+            <span [class.white]="color.id === 1">&#10003;</span>
+          }
+        </button>
+      }
+    </div>
+    <button [disabled]="answered() || selectedColors().length === 0 || secondsLeft() === 0 || secondsLeft() === null"
+      [class.disabled]="answered() || selectedColors().length === 0 || secondsLeft() === 0 || secondsLeft() === null"
+      (click)="handleSubmitAnswer()">
+      Enviar respuesta
+    </button>
+    <p class="message">{{ message() }}</p>
+  </div>
+}
+<router-outlet />

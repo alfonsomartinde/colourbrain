@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>SSE Test - Colourbrain</title>
+    <style>
+      body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 20px; }
+      .status { margin-bottom: 12px; }
+      .log { border: 1px solid #ddd; padding: 10px; max-height: 300px; overflow: auto; background: #fafafa; }
+      .ok { color: #1a7f37; }
+      .warn { color: #b54708; }
+      .err { color: #b42318; }
+      code { background: #f0f0f0; padding: 2px 4px; border-radius: 3px; }
+    </style>
+  </head>
+  <body>
+    <h1>SSE Test</h1>
+    <div class="status">Endpoint: <code id="endpoint">/obs/colourbrain/backend-app/public/test-sse.php</code></div>
+    <div class="status">State: <span id="state">idle</span></div>
+    <div class="status">Last Event ID: <code id="lastId">-</code></div>
+    <div class="log" id="log"></div>
+
+    <script>
+      const endpoint = document.getElementById('endpoint').textContent;
+      const stateEl = document.getElementById('state');
+      const lastIdEl = document.getElementById('lastId');
+      const logEl = document.getElementById('log');
+
+      function log(line, cls) {
+        const div = document.createElement('div');
+        if (cls) div.className = cls;
+        div.textContent = `[${new Date().toLocaleTimeString()}] ${line}`;
+        logEl.appendChild(div);
+        logEl.scrollTop = logEl.scrollHeight;
+      }
+
+      function start() {
+        stateEl.textContent = 'connecting';
+        const es = new EventSource(endpoint);
+
+        es.onopen = () => {
+          stateEl.textContent = 'open';
+          log('Connection opened', 'ok');
+        };
+
+        es.onerror = (e) => {
+          stateEl.textContent = 'error/reconnecting';
+          log('Error or disconnected; browser will retry automatically', 'warn');
+        };
+
+        es.onmessage = (e) => {
+          // Generic messages (if any)
+          lastIdEl.textContent = e.lastEventId || '-';
+          log(`message: ${e.data}`);
+        };
+
+        es.addEventListener('ping', (e) => {
+          lastIdEl.textContent = e.lastEventId || '-';
+          log(`ping: ${e.data}`, 'ok');
+        });
+      }
+
+      start();
+    </script>
+  </body>
+  </html>
+
+

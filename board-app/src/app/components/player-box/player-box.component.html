@@ -1,0 +1,10 @@
+<div class="player-points" [class.is-winner]="isWinner">
+  <p>{{ points }}</p>
+</div>
+@if (showAnswers && answers.length) {
+  <div class="player-answers">
+    @for (cid of answers; track $index) {
+      <div class="color-card" [style.background-color]="colorHex(cid)"></div>
+    }
+  </div>
+}

@@ -4,12 +4,13 @@ import { PlayerBoxComponent } from './components/player-box/player-box.component
 import { ApiService } from './shared/api.service';
 import { GameState, Player } from './shared/types';
 import { TimerComponent } from './components/timer/timer.component';
+import { RewardComponent } from './components/reward/reward.component';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, PlayerBoxComponent, TimerComponent],
+  imports: [RouterOutlet, PlayerBoxComponent, TimerComponent, RewardComponent],
   templateUrl: './app.html',
-  styleUrl: './app.scss'
+  styleUrl: './app.scss',
 })
 export class App implements OnInit, OnDestroy {
   protected readonly title = signal('board-app');
@@ -46,7 +47,7 @@ export class App implements OnInit, OnDestroy {
   }
 
   refresh(): void {
-    this.#api.getState().subscribe((s) => {
+    this.#api.getState().subscribe(s => {
       this.state.set(s);
       this.updateStatePolling();
     });
@@ -63,13 +64,13 @@ export class App implements OnInit, OnDestroy {
   }
 
   private loadPlayers(): void {
-    this.#api.getPlayers().subscribe((p) => this.players.set(p));
+    this.#api.getPlayers().subscribe(p => this.players.set(p));
   }
 
   private loadColors(): void {
-    this.#api.getColors().subscribe((cs) => {
+    this.#api.getColors().subscribe(cs => {
       const map: Record<number, string> = {};
-      cs.forEach(c => map[c.id] = c.hexValue);
+      cs.forEach(c => (map[c.id] = c.hexValue));
       this.colors.set(map);
     });
   }
@@ -81,6 +82,11 @@ export class App implements OnInit, OnDestroy {
 
   colorHex(id: number): string {
     return this.colors()[id] ?? '#000000';
+  }
+
+  currentReward(): number {
+    const pot = this.state()?.additional_points ?? 0;
+    return 1 + pot;
   }
 
   isWinner(playerIndex: number): boolean {
@@ -99,7 +105,7 @@ export class App implements OnInit, OnDestroy {
     const currentTurn = s?.current_turn ?? null;
     if (atZero) {
       if (currentTurn !== null && this.#fetchedAnswersForTurn !== currentTurn) {
-        this.#api.getCurrentAnswers().subscribe((res) => {
+        this.#api.getCurrentAnswers().subscribe(res => {
           const dict: Record<number, number[]> = {};
           res.answers.forEach(a => (dict[a.playerId] = a.colorIds));
           this.answersByPlayerId.set(dict);
@@ -114,7 +120,7 @@ export class App implements OnInit, OnDestroy {
     // Fetch reveal only when presenter has revealed
     if (s?.correct_answer_shown && currentTurn !== null) {
       if (this.#fetchedRevealForTurn !== currentTurn) {
-        this.#api.getCurrentReveal().subscribe((r) => this.reveal.set(r));
+        this.#api.getCurrentReveal().subscribe(r => this.reveal.set(r));
         this.#fetchedRevealForTurn = currentTurn;
       }
     } else {
@@ -150,22 +156,21 @@ export class App implements OnInit, OnDestroy {
       this.#loadPlayers = setInterval(() => this.loadPlayers(), 2000);
     }
 
-    if (this.#playersFetchedOnRevealTurn !== null && this.#playersFetchedOnRevealTurn !== currentTurn) {
+    if (
+      this.#playersFetchedOnRevealTurn !== null &&
+      this.#playersFetchedOnRevealTurn !== currentTurn
+    ) {
       this.#playersFetchedOnRevealTurn = null;
     }
   }
 
   /**
    * Activa o pausa el polling del estado según el momento del turno.
-   * - Durante la cuenta atrás (>0s): pausa el polling.
-   * - Sin turno activo o tras llegar a 0s: activa el polling para captar reveal/siguiente turno.
+   * Mantener polling activo también durante la cuenta atrás para detectar fin anticipado.
    */
   private updateStatePolling(): void {
-    const s = this.state();
-    const hasActiveTurn = !!(s && s.current_turn > 0 && s.turn_end_at);
-    const secs = this.secondsLeft();
-    const shouldPoll = !hasActiveTurn || (secs === null || secs <= 0);
-    this.ensureStatePolling(shouldPoll);
+    // Polling siempre activo para detectar cambios del presentador (fin anticipado)
+    this.ensureStatePolling(true);
   }
 
   /**
@@ -175,7 +180,7 @@ export class App implements OnInit, OnDestroy {
     if (shouldRun) {
       if (!this.#statePoll) {
         this.#statePoll = setInterval(() => {
-          this.#api.getState().subscribe((s) => this.state.set(s));
+          this.#api.getState().subscribe(s => this.state.set(s));
         }, 1000);
       }
     } else if (this.#statePoll) {

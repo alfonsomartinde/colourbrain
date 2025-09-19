@@ -26,20 +26,55 @@ export class ApiService {
   }
 
   postStartTurn(): Observable<{ ok: boolean; data?: unknown }> {
-    return this.http.post<{ ok: boolean; data?: unknown }>(`${API_BASE}/api/presenter/start-turn`, {});
+    return this.http.post<{ ok: boolean; data?: unknown }>(
+      `${API_BASE}/api/presenter/start-turn`,
+      {}
+    );
   }
 
-  postShowCorrect(): Observable<{ ok: boolean; data?: { correctColorIds: number[]; winners: number[] } }> {
-    return this.http.post<{ ok: boolean; data?: { correctColorIds: number[]; winners: number[] } }>(`${API_BASE}/api/presenter/show-correct`, {});
+  postShowCorrect(): Observable<{
+    ok: boolean;
+    data?: { correctColorIds: number[]; winners: number[] };
+  }> {
+    return this.http.post<{ ok: boolean; data?: { correctColorIds: number[]; winners: number[] } }>(
+      `${API_BASE}/api/presenter/show-correct`,
+      {}
+    );
   }
 
   renamePlayer(id: number, name: string): Observable<{ ok: boolean; players: Player[] }> {
-    return this.http.patch<{ ok: boolean; players: Player[] }>(`${API_BASE}/api/players/${id}`, { name });
+    // Usar POST para evitar 405 si el hosting no soporta PATCH
+    return this.http.post<{ ok: boolean; players: Player[] }>(
+      `${API_BASE}/api/players/${id}/rename`,
+      {
+        name,
+      }
+    );
   }
 
   getHistory(): Observable<HistoryItem[]> {
     return this.http.get<HistoryItem[]>(`${API_BASE}/api/history`);
   }
+
+  postFinishTurnIfAllAnswered(): Observable<{
+    ok: boolean;
+    ended: boolean;
+    turn_end_at?: string;
+    answers?: number;
+    players?: number;
+  }> {
+    return this.http.post<{
+      ok: boolean;
+      ended: boolean;
+      turn_end_at?: string;
+      answers?: number;
+      players?: number;
+    }>(`${API_BASE}/api/presenter/finish-turn-if-all-answered`, {});
+  }
+
+  getCurrentAnswers(): Observable<{ answers: { playerId: number; colorIds: number[] }[] }> {
+    return this.http.get<{ answers: { playerId: number; colorIds: number[] }[] }>(
+      `${API_BASE}/api/answers/current`
+    );
+  }
 }
-
-

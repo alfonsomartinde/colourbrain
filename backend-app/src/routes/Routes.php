@@ -26,9 +26,11 @@ final class Routes
         $app->post('/api/presenter/start-game', [$presenter, 'startGame']);
         $app->post('/api/presenter/start-turn', [$presenter, 'startTurn']);
         $app->post('/api/presenter/show-correct', [$presenter, 'showCorrect']);
+        $app->post('/api/presenter/finish-turn-if-all-answered', [$presenter, 'finishTurnIfAllAnswered']);
 
         // players
         $app->patch('/api/players/{id}', [$state, 'renamePlayer']);
+        $app->post('/api/players/{id}/rename', [$state, 'renamePlayer']);
         $app->post('/api/player/answer', [$state, 'postPlayerAnswer']);
     }
 }

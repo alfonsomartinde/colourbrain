@@ -25,6 +25,17 @@ class AnswerRepository
         $stmt->execute([':turn' => $turnId]);
         return $stmt->fetchAll();
     }
+
+    /**
+     * Count answers submitted for a given turn id.
+     */
+    public function countByTurn(int $turnId): int
+    {
+        $stmt = $this->pdo->prepare('SELECT COUNT(*) AS c FROM answers WHERE turn_id = :turn');
+        $stmt->execute([':turn' => $turnId]);
+        $row = $stmt->fetch();
+        return (int)($row['c'] ?? 0);
+    }
 }
 
 

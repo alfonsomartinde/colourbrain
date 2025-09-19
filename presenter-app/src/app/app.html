@@ -1,4 +1,3 @@
-
 <main class="presenter-container">
   <header class="header">
     <h1>Presentador</h1>
@@ -9,10 +8,26 @@
       <h2 class="box-title">Jugadores:</h2>
       <div class="player-list">
         @for (p of players(); track trackPlayer($index, p)) {
-          <div class="player-item">
-            <input class="player-input" [value]="p.name" (change)="onRename(p.id, $any($event.target).value)" />
-            <span class="player-points"> Puntos: {{ p.points }}</span>
+        <div class="player-item">
+          <input
+            class="player-input"
+            aria-label="Nombre del jugador"
+            [value]="p.name"
+            (change)="onRename(p.id, $any($event.target).value)" />
+          <span class="player-points"> Puntos: {{ p.points }}</span>
+          <div class="player-answer">
+            <span>Respuesta actual:</span>
+            @let cids = currentAnswers()[p.id]; @if (cids?.length) {
+            <div class="answer-cards">
+              @for (cid of cids; track $index) {
+              <div class="color-card small" [style.background-color]="colorHex(cid)"></div>
+              }
+            </div>
+            } @else {
+            <div class="no-answer">—</div>
+            }
           </div>
+        </div>
         }
       </div>
     </div>
@@ -20,10 +35,12 @@
     <div class="box turn-info-container">
       <h2 class="box-title">Turno actual: {{ state()?.current_turn }}</h2>
       <h3 class="question-text">
-        {{ state()?.active_question?.text }} 
+        {{ state()?.active_question?.text }}
         <span class="hint">({{ state()?.active_question?.requiredColorsCount }} colores)</span>
       </h3>
-      <p><strong>Valor de la pregunta:</strong> {{ (state()?.additional_points ?? 0) + 1 }} puntos</p>
+      <p>
+        <strong>Valor de la pregunta:</strong> {{ (state()?.additional_points ?? 0) + 1 }} puntos
+      </p>
     </div>
 
     <div class="box history-container">
@@ -33,44 +50,51 @@
           <tr>
             <th>Pregunta</th>
             @for (p of players(); track trackPlayer($index, p)) {
-              <th>{{ p.name }}</th>
+            <th>{{ p.name }}</th>
             }
             <th>Correcta</th>
           </tr>
         </thead>
         @for (h of history(); track $index) {
-          <tr>
-            <td class="history-item-question">{{ h.text }}</td>
-            @for (p of players(); track trackPlayer($index, p)) {
-              <td [class.winner]="h.winners.includes(p.id)">
-                <div class="history-item-player">
-                @for (card of getAnswerColorIds(h, p.id); track $index) {
-                  <div class="color-card small" [style.background-color]="colorHex(card)"></div>
-                }
-                </div>
-              </td>
-            }
-            <td>
-              <div class="history-item-correct">
-              @for (card of h.correctColorIds; track $index) {
-                <div class="color-card small" [style.background-color]="colorHex(card)"></div>
+        <tr>
+          <td class="history-item-question">{{ h.text }}</td>
+          @for (p of players(); track trackPlayer($index, p)) {
+          <td [class.winner]="h.winners.includes(p.id)">
+            <div class="history-item-player">
+              @for (card of getAnswerColorIds(h, p.id); track $index) {
+              <div class="color-card small" [style.background-color]="colorHex(card)"></div>
               }
-              </div>
-            </td>
-          </tr>
+            </div>
+          </td>
+          }
+          <td>
+            <div class="history-item-correct">
+              @for (card of h.correctColorIds; track $index) {
+              <div class="color-card small" [style.background-color]="colorHex(card)"></div>
+              }
+            </div>
+          </td>
+        </tr>
         }
       </table>
     </div>
 
     <div class="buttons-container">
       <button type="button" (click)="onStartTurn()">Iniciar turno</button>
-      <button type="button" (click)="onShowCorrect()" [disabled]="disableReveal()">Mostrar respuesta correcta</button>
+      <button
+        type="button"
+        (click)="onFinishIfAllAnswered()"
+        [disabled]="!canFinishIfAllAnswered()">
+        Finalizar cuenta atrás (si todos han respondido)
+      </button>
+      <button type="button" (click)="onShowCorrect()" [disabled]="disableReveal()">
+        Mostrar respuesta correcta
+      </button>
     </div>
 
     <div class="buttons-container">
       <button class="danger" type="button" (click)="onStartGame()">Iniciar partida</button>
     </div>
-    
   </div>
 </main>
 <router-outlet />

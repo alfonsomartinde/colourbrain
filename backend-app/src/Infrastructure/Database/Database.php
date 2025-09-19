@@ -51,6 +51,8 @@ class Database
         ];
         try {
             $this->connection = new PDO($dsn, $this->username, $this->password, $options);
+            // Ensure MySQL session runs in UTC to avoid timezone-induced drifts
+            $this->connection->exec("SET time_zone = '+00:00'");
         } catch (PDOException $e) {
             throw $e;
         }

@@ -145,7 +145,10 @@ class PresenterController
         }
 
         $duration = (int)($_ENV['TURN_DURATION_SECONDS'] ?? 90);
-        $endAt = (new \DateTimeImmutable('+'.$duration.' seconds'))->format('Y-m-d H:i:s');
+        // Compute end time in UTC to avoid timezone drift between server and clients
+        $endAt = (new \DateTimeImmutable('+'.$duration.' seconds', new \DateTimeZone('UTC')))
+            ->setTimezone(new \DateTimeZone('UTC'))
+            ->format('Y-m-d H:i:s');
 
         $stateRepo->update([
             'phase' => 'question',
@@ -166,6 +169,39 @@ class PresenterController
         ];
 
         $response->getBody()->write(json_encode(['ok' => true, 'data' => $payload]));
+        return $response->withHeader('Content-Type', \App\Http\Http::CONTENT_TYPE_JSON);
+    }
+
+    /**
+     * POST /api/presenter/finish-turn-if-all-answered — si ya han respondido todos los jugadores, adelanta el fin de turno a ahora.
+     */
+    public function finishTurnIfAllAnswered(Request $request, Response $response): Response
+    {
+        $db = $this->db();
+        $stateRepo = new GameStateRepository($db);
+        $playerRepo = new \App\Repositories\PlayerRepository($db);
+        $answerRepo = new \App\Repositories\AnswerRepository($db);
+
+        $state = $stateRepo->getOrCreate();
+        $turnId = (int)($state['current_turn'] ?? 0);
+        if ($turnId <= 0) {
+            $response->getBody()->write(json_encode(['ok' => false, 'reason' => 'no-active-turn']));
+            return $response->withStatus(409)->withHeader('Content-Type', \App\Http\Http::CONTENT_TYPE_JSON);
+        }
+
+        $totalPlayers = $playerRepo->countAll();
+        $answersCount = $answerRepo->countByTurn($turnId);
+
+        if ($totalPlayers > 0 && $answersCount >= $totalPlayers) {
+            $nowUtc = (new \DateTimeImmutable('now', new \DateTimeZone('UTC')))
+                ->setTimezone(new \DateTimeZone('UTC'))
+                ->format('Y-m-d H:i:s');
+            $stateRepo->update(['turn_end_at' => $nowUtc]);
+            $response->getBody()->write(json_encode(['ok' => true, 'ended' => true, 'turn_end_at' => $nowUtc]));
+        } else {
+            $response->getBody()->write(json_encode(['ok' => true, 'ended' => false, 'answers' => $answersCount, 'players' => $totalPlayers]));
+        }
+
         return $response->withHeader('Content-Type', \App\Http\Http::CONTENT_TYPE_JSON);
     }
 

@@ -7,7 +7,7 @@ import { ApiService } from './shared/api.service';
   selector: 'app-root',
   imports: [RouterOutlet],
   templateUrl: './app.html',
-  styleUrl: './app.scss'
+  styleUrl: './app.scss',
 })
 export class App implements OnInit, OnDestroy {
   protected readonly title = signal('player-app');
@@ -25,29 +25,25 @@ export class App implements OnInit, OnDestroy {
   #statePoll: any;
   #lastTurn: number | null = null;
   #timer: any;
+  #playersFetchedOnRevealTurn: number | null = null;
 
   ngOnInit(): void {
     this.playerId.set(this.#readPlayerIdFromUrl());
-    this.#api.getState().subscribe((s) => {
+    this.#api.getState().subscribe(s => {
       this.state.set(s);
       this.question.set(s.active_question ?? null);
       this.turn.set(s.current_turn ?? 0);
       this.#lastTurn = s.current_turn ?? 0;
     });
-    this.#api.getColors().subscribe((c) => {
+    this.#api.getColors().subscribe(c => {
       this.colors.set(c);
     });
-    this.#api.getPlayers().subscribe((p) => {
+    this.#api.getPlayers().subscribe(p => {
       this.players.set(p);
     });
 
-    // Polling del estado con guarda: no pedir mientras el countdown esté activo
+    // Polling de estado continuo para detectar inicio de turno sin refrescar
     this.#statePoll = setInterval(() => {
-      const s = this.state();
-      const secs = this.secondsLeft();
-      if (s?.phase === 'question' && secs !== null && secs > 0) {
-        return; // aún contando; el estado no cambia
-      }
       this.refreshState();
     }, 1000);
     // Tick para countdown
@@ -86,7 +82,7 @@ export class App implements OnInit, OnDestroy {
       return;
     }
     this.#api.postPlayerAnswer({ playerId: me, colorIds: this.selectedColors() }).subscribe({
-      next: (res) => {
+      next: res => {
         if (res?.ok && res.accepted !== false) {
           this.answered.set(true);
           this.message.set('Respuesta enviada');
@@ -103,11 +99,23 @@ export class App implements OnInit, OnDestroy {
   }
 
   private refreshState(): void {
-    this.#api.getState().subscribe((s) => {
+    this.#api.getState().subscribe(s => {
       const prevTurn = this.#lastTurn ?? 0;
       this.state.set(s);
       this.question.set(s.active_question ?? null);
       this.turn.set(s.current_turn ?? 0);
+      // Si el presentador ha revelado, cargar puntos actualizados una única vez por turno
+      if (s.correct_answer_shown && (s.current_turn ?? 0) > 0) {
+        if (this.#playersFetchedOnRevealTurn !== (s.current_turn ?? 0)) {
+          this.#api.getPlayers().subscribe(p => this.players.set(p));
+          this.#playersFetchedOnRevealTurn = s.current_turn ?? 0;
+        }
+      } else if (
+        this.#playersFetchedOnRevealTurn !== null &&
+        this.#playersFetchedOnRevealTurn !== (s.current_turn ?? 0)
+      ) {
+        this.#playersFetchedOnRevealTurn = null;
+      }
       if ((s.current_turn ?? 0) !== prevTurn) {
         // Nuevo turno: desbloquear y limpiar selección
         this.answered.set(false);

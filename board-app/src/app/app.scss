@@ -1,16 +1,30 @@
-.timer-container {
+.timer-container,
+.reward-container {
   position: absolute;
-  width: 100px;
-  height: 70px;
-  top: 10px;
-  left: calc(50% - 100px/2);
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
+  width: 160px;
+  height: 90px;
+  top: 10px;
   border-radius: 10px;
   background-color: #f5f5f5;
 }
 
+.timer-container {
+  left: calc(45% - 140px / 2);
+}
+
+.reward-container {
+  left: calc(55% - 140px / 2);
+}
+
+.reward-label {
+  font-size: 14px;
+  font-weight: 400;
+  text-transform: uppercase;
+}
 
 .endgame-banner {
   margin-top: 16px;
@@ -18,7 +32,6 @@
   font-weight: 800;
   color: #ef4444;
 }
-
 
 .board-container {
   // background-image: url('/assets/fondo-fake.png');
@@ -31,7 +44,7 @@
   height: 1080px;
   justify-content: center;
   position: relative;
-  width: 1920px
+  width: 1920px;
 }
 
 .question-box {
@@ -41,23 +54,23 @@
   height: 180px;
   margin-bottom: 160px;
   padding: 20px;
-  width: 360px
+  width: 360px;
 }
 
 .turn-number {
-  font-size: 1rem
+  font-size: 1rem;
 }
 
 .question-text,
 .turn-number {
   color: #000;
-  text-align: center
+  text-align: center;
 }
 
 .question-text {
   font-size: 2rem;
   font-weight: 700;
-  margin-top: 20px
+  margin-top: 20px;
 }
 
 .hint {
@@ -75,14 +88,34 @@
   top: 520px;
   z-index: 999;
   left: 50%;
-  transform: translate(-50%,0);
+  transform: translate(-50%, 0);
 }
 
 .player-box {
   display: flex;
 }
 
-.top-left { position: absolute; top: 360px; left: 10px; flex-direction: row; }
-.top-right {  position: absolute; top: 360px; right: 10px; flex-direction: row-reverse; }
-.bottom-left { position: absolute; bottom: 360px; left: 10px; flex-direction: row; }
-.bottom-right { position: absolute; bottom: 360px; right: 10px; flex-direction: row-reverse; }
+.top-left {
+  position: absolute;
+  top: 360px;
+  left: 10px;
+  flex-direction: row;
+}
+.top-right {
+  position: absolute;
+  top: 360px;
+  right: 10px;
+  flex-direction: row-reverse;
+}
+.bottom-left {
+  position: absolute;
+  bottom: 360px;
+  left: 10px;
+  flex-direction: row;
+}
+.bottom-right {
+  position: absolute;
+  bottom: 360px;
+  right: 10px;
+  flex-direction: row-reverse;
+}

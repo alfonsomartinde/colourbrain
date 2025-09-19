@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'sportiariders/colourbrain-backend',
-        'pretty_version' => '1.0.0+no-version-set',
-        'version' => '1.0.0.0',
-        'reference' => null,
+        'pretty_version' => 'dev-main',
+        'version' => 'dev-main',
+        'reference' => '494e554bfdd1b9b2246eb23f9ce883fd6ceffa16',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -140,9 +140,9 @@
             'dev_requirement' => false,
         ),
         'sportiariders/colourbrain-backend' => array(
-            'pretty_version' => '1.0.0+no-version-set',
-            'version' => '1.0.0.0',
-            'reference' => null,
+            'pretty_version' => 'dev-main',
+            'version' => 'dev-main',
+            'reference' => '494e554bfdd1b9b2246eb23f9ce883fd6ceffa16',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

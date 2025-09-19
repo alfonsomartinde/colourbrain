@@ -1,78 +1,71 @@
 <main class="board-container">
   <div class="board-content">
-    <!-- Temporizador -->
-    <timer class="timer-container" [secondsLeft]="secondsLeft() ?? 0"></timer>
+    <!-- Temporizador + valor de pregunta -->
+    <div class="timer-container-wrapper">
+      <timer class="timer-container" [secondsLeft]="secondsLeft() ?? 0"></timer>
+    </div>
 
-    
+    <div class="reward-container-wrapper">
+      <reward class="reward-container" [reward]="currentReward()"></reward>
+    </div>
+
     @if (state()?.active_question && state()!.current_turn > 0) {
-      <!-- Pregunta -->
-      <div class="question-box">
-        <p class="turn-number">Turno {{ state()?.current_turn ?? 0 }}</p>
-        <h2 class="question-text">{{ state()!.active_question!.text }} 
-          <span class="hint">({{ state()!.active_question!.requiredColorsCount }})</span>
-        </h2>
-      </div>
-    }
-    
-   
-    @if (state()?.phase === 'idle' && (state()?.current_turn ?? 0) > 0) {
-       <!-- Fin de la partida -->
-      <div class="endgame-banner">FIN DE LA PARTIDA</div>
-    }
-    
-    
-    @if (state()?.correct_answer_shown && reveal(); as r) {
-      <!-- Solución correcta -->
-      <div class="correct-answer">
-        @for (cid of r.correctColorIds; track $index) {
-          <div class="color-card" [style.background-color]="colorHex(cid)"></div>
-        }
-      </div>
-    }
-
-
-    @if (players().length > 0) {
-      <!-- Jugadores -->
-      <player-box
-        class="player-box top-left" 
-        [class.is-winner]="isWinner(0)"
-        [name]="players()[0].name"
-        [points]="players()[0].points"
-        [isWinner]="isWinner(0)"
-        [answers]="answersByPlayerId()[1] || []"
-        [colors]="colors()"
-        [showAnswers]="showAnswers()"
-      ></player-box>
-      <player-box
-        class="player-box top-right"
-        [class.is-winner]="isWinner(1)"
-        [name]="players()[1].name"
-        [points]="players()[1].points"
-        [isWinner]="isWinner(1)"
-        [answers]="answersByPlayerId()[2] || []"
-        [colors]="colors()"
-        [showAnswers]="showAnswers()"
-      ></player-box>
-      <player-box
-        class="player-box bottom-left"
-        [class.is-winner]="isWinner(2)"
-        [name]="players()[2].name"
-        [points]="players()[2].points"
-        [isWinner]="isWinner(2)"
-        [answers]="answersByPlayerId()[3] || []"
-        [colors]="colors()"
-        [showAnswers]="showAnswers()"
-      ></player-box>
-      <player-box
-        class="player-box bottom-right"
-        [class.is-winner]="isWinner(3)"
-        [name]="players()[3].name"
-        [points]="players()[3].points"
-        [isWinner]="isWinner(3)"
-        [answers]="answersByPlayerId()[4] || []"
-        [colors]="colors()"
-        [showAnswers]="showAnswers()"
-      ></player-box>
+    <!-- Pregunta -->
+    <div class="question-box">
+      <p class="turn-number">Turno {{ state()?.current_turn ?? 0 }}</p>
+      <h2 class="question-text">
+        {{ state()!.active_question!.text }}
+        <span class="hint">({{ state()!.active_question!.requiredColorsCount }})</span>
+      </h2>
+    </div>
+    } @if (state()?.phase === 'idle' && (state()?.current_turn ?? 0) > 0) {
+    <!-- Fin de la partida -->
+    <div class="endgame-banner">FIN DE LA PARTIDA</div>
+    } @if (state()?.correct_answer_shown && reveal(); as r) {
+    <!-- Solución correcta -->
+    <div class="correct-answer">
+      @for (cid of r.correctColorIds; track $index) {
+      <div class="color-card" [style.background-color]="colorHex(cid)"></div>
+      }
+    </div>
+    } @if (players().length > 0) {
+    <!-- Jugadores -->
+    <player-box
+      class="player-box top-left"
+      [class.is-winner]="isWinner(0)"
+      [name]="players()[0].name"
+      [points]="players()[0].points"
+      [isWinner]="isWinner(0)"
+      [answers]="answersByPlayerId()[1] || []"
+      [colors]="colors()"
+      [showAnswers]="showAnswers()"></player-box>
+    <player-box
+      class="player-box top-right"
+      [class.is-winner]="isWinner(1)"
+      [name]="players()[1].name"
+      [points]="players()[1].points"
+      [isWinner]="isWinner(1)"
+      [answers]="answersByPlayerId()[2] || []"
+      [colors]="colors()"
+      [showAnswers]="showAnswers()"></player-box>
+    <player-box
+      class="player-box bottom-left"
+      [class.is-winner]="isWinner(2)"
+      [name]="players()[2].name"
+      [points]="players()[2].points"
+      [isWinner]="isWinner(2)"
+      [answers]="answersByPlayerId()[3] || []"
+      [colors]="colors()"
+      [showAnswers]="showAnswers()"></player-box>
+    <player-box
+      class="player-box bottom-right"
+      [class.is-winner]="isWinner(3)"
+      [name]="players()[3].name"
+      [points]="players()[3].points"
+      [isWinner]="isWinner(3)"
+      [answers]="answersByPlayerId()[4] || []"
+      [colors]="colors()"
+      [showAnswers]="showAnswers()"></player-box>
     }
   </div>
 </main>

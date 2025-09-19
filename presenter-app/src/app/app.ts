@@ -2,13 +2,12 @@ import { Component, inject, signal, OnInit, OnDestroy, effect, EffectRef } from 
 import { RouterOutlet } from '@angular/router';
 import { ApiService } from './shared/api.service';
 import { Player, GameState, HistoryItem, Color } from './shared/types';
-import { JsonPipe } from '@angular/common';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, JsonPipe],
+  imports: [RouterOutlet],
   templateUrl: './app.html',
-  styleUrl: './app.scss'
+  styleUrl: './app.scss',
 })
 export class App implements OnInit, OnDestroy {
   protected readonly title = signal('presenter-app');
@@ -16,9 +15,13 @@ export class App implements OnInit, OnDestroy {
   protected readonly players = signal<Player[]>([]);
   protected readonly history = signal<HistoryItem[] | null>(null);
   protected readonly now = signal<number>(Date.now());
-  readonly #timer: any = setInterval(() => this.now.set(Date.now()), 250);
+  readonly #timer: any = setInterval(() => {
+    this.now.set(Date.now());
+    this.updateAnswersPolling();
+  }, 250);
   private expiryTimeoutId?: number;
   protected readonly colors = signal<Color[]>([]);
+  protected readonly currentAnswers = signal<Record<number, number[]>>({});
   api = inject(ApiService);
   #stateInFlight = false;
   #lastStateFetchAt = 0;
@@ -26,6 +29,8 @@ export class App implements OnInit, OnDestroy {
   #playersInFlight = false;
   #historyInFlight = false;
   #colorsInFlight = false;
+  #answersInFlight = false;
+  #answersPoll?: any;
   #expiryEffect: EffectRef = effect(() => {
     const s = this.state();
     // limpiar timer anterior
@@ -35,8 +40,8 @@ export class App implements OnInit, OnDestroy {
     }
     if (!s?.turn_end_at) return;
     const endMs = new Date(s.turn_end_at.replace(' ', 'T') + 'Z').getTime();
-    const skewMs = 200;           // colchón
-    const minDelayMs = 1000;      // mínimo 1s
+    const skewMs = 200; // colchón
+    const minDelayMs = 1000; // mínimo 1s
     const raw = endMs - Date.now() + skewMs;
     const delay = Math.max(minDelayMs, raw);
 
@@ -55,19 +60,23 @@ export class App implements OnInit, OnDestroy {
   }
 
   onStartGame(): void {
-    const confirmed = window.confirm('Esto reiniciará la partida y borrará puntuaciones y respuestas. ¿Deseas continuar?');
+    const confirmed = window.confirm(
+      'Esto reiniciará la partida y borrará puntuaciones y respuestas. ¿Deseas continuar?'
+    );
     if (!confirmed) return;
     this.api.postStartGame().subscribe(() => {
       // Resetear historial en UI
       this.history.set([]);
       this.fetchState();
       this.fetchPlayers();
+      this.currentAnswers.set({});
     });
   }
 
   onStartTurn(): void {
     this.api.postStartTurn().subscribe(() => {
       this.fetchState();
+      this.currentAnswers.set({});
     });
   }
 
@@ -75,6 +84,15 @@ export class App implements OnInit, OnDestroy {
     this.api.postShowCorrect().subscribe(() => {
       this.fetchState();
       this.fetchHistory();
+    });
+  }
+
+  onFinishIfAllAnswered(): void {
+    this.api.postFinishTurnIfAllAnswered().subscribe(res => {
+      if (res?.ended) {
+        this.fetchState();
+        this.fetchHistory();
+      }
     });
   }
 
@@ -108,11 +126,21 @@ export class App implements OnInit, OnDestroy {
     return (secs !== null && secs > 0) || this.state()?.phase === 'reveal';
   }
 
+  canFinishIfAllAnswered(): boolean {
+    const s = this.state();
+    if (!s || s.phase !== 'question') return false;
+    const players = this.players();
+    if (!players || players.length === 0) return false;
+    const ans = this.currentAnswers();
+    return players.every(p => Array.isArray(ans[p.id]) && ans[p.id].length > 0);
+  }
+
   ngOnDestroy(): void {
     if (this.#timer) clearInterval(this.#timer);
     if (this.expiryTimeoutId !== undefined) clearTimeout(this.expiryTimeoutId);
     if (this.#pendingStateTimer !== undefined) clearTimeout(this.#pendingStateTimer);
     if (this.#expiryEffect) this.#expiryEffect.destroy();
+    if (this.#answersPoll) clearInterval(this.#answersPoll);
   }
 
   colorHex(id: number): string {
@@ -146,12 +174,25 @@ export class App implements OnInit, OnDestroy {
     }
     this.#stateInFlight = true;
     this.api.getState().subscribe({
-      next: (s) => {
+      next: s => {
         this.state.set(s);
         this.#lastStateFetchAt = Date.now();
+        // polling de respuestas durante el turno
+        const secs = this.secondsLeft();
+        if (s.phase === 'question' && secs !== null && secs > 0) {
+          this.fetchCurrentAnswers();
+        }
+        // si cambia de turno o se reinicia, limpiar respuestas actuales
+        if (s.phase !== 'question') {
+          this.currentAnswers.set({});
+        }
       },
-      error: () => { /* noop */ },
-      complete: () => { this.#stateInFlight = false; }
+      error: () => {
+        /* noop */
+      },
+      complete: () => {
+        this.#stateInFlight = false;
+      },
     });
   }
 
@@ -159,9 +200,13 @@ export class App implements OnInit, OnDestroy {
     if (this.#playersInFlight) return;
     this.#playersInFlight = true;
     this.api.getPlayers().subscribe({
-      next: (p) => this.players.set(p),
-      error: () => { /* noop */ },
-      complete: () => { this.#playersInFlight = false; }
+      next: p => this.players.set(p),
+      error: () => {
+        /* noop */
+      },
+      complete: () => {
+        this.#playersInFlight = false;
+      },
     });
   }
 
@@ -169,9 +214,13 @@ export class App implements OnInit, OnDestroy {
     if (this.#historyInFlight) return;
     this.#historyInFlight = true;
     this.api.getHistory().subscribe({
-      next: (h) => this.history.set(h),
-      error: () => { /* noop */ },
-      complete: () => { this.#historyInFlight = false; }
+      next: h => this.history.set(h),
+      error: () => {
+        /* noop */
+      },
+      complete: () => {
+        this.#historyInFlight = false;
+      },
     });
   }
 
@@ -179,9 +228,48 @@ export class App implements OnInit, OnDestroy {
     if (this.#colorsInFlight) return;
     this.#colorsInFlight = true;
     this.api.getColors().subscribe({
-      next: (c) => this.colors.set(c),
-      error: () => { /* noop */ },
-      complete: () => { this.#colorsInFlight = false; }
+      next: c => this.colors.set(c),
+      error: () => {
+        /* noop */
+      },
+      complete: () => {
+        this.#colorsInFlight = false;
+      },
     });
+  }
+
+  private fetchCurrentAnswers(): void {
+    if (this.#answersInFlight) return;
+    this.#answersInFlight = true;
+    this.api.getCurrentAnswers().subscribe({
+      next: res => {
+        const dict: Record<number, number[]> = {};
+        res.answers.forEach(a => (dict[a.playerId] = a.colorIds));
+        this.currentAnswers.set(dict);
+      },
+      error: () => {
+        /* noop */
+      },
+      complete: () => {
+        this.#answersInFlight = false;
+      },
+    });
+  }
+
+  /**
+   * Inicia o detiene el polling de respuestas actuales según estado del turno.
+   */
+  private updateAnswersPolling(): void {
+    const s = this.state();
+    const secs = this.secondsLeft();
+    const shouldPoll = !!(s && s.phase === 'question' && secs !== null && secs > 0);
+    if (shouldPoll) {
+      if (!this.#answersPoll) {
+        this.#answersPoll = setInterval(() => this.fetchCurrentAnswers(), 2000);
+      }
+    } else if (this.#answersPoll) {
+      clearInterval(this.#answersPoll);
+      this.#answersPoll = undefined;
+    }
   }
 }

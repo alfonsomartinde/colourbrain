@@ -328,8 +328,10 @@ class StateController
     {
         $turnId = (int)($state['current_turn'] ?? 0);
         $endAtStr = $state['turn_end_at'] ?? null;
-        $endAt = $endAtStr ? \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', (string)$endAtStr) : null;
-        $now = new \DateTimeImmutable('now');
+        // Interpret stored end time as UTC and compare using UTC now
+        $tzUtc = new \DateTimeZone('UTC');
+        $endAt = $endAtStr ? \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', (string)$endAtStr, $tzUtc) : null;
+        $now = new \DateTimeImmutable('now', $tzUtc);
         return $turnId <= 0 || !$endAt || $now > $endAt;
     }
 

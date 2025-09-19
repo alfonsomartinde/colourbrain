@@ -33,6 +33,16 @@ class PlayerRepository
         $stmt = $this->pdo->prepare('UPDATE players SET name = :name WHERE id = :id');
         $stmt->execute([':name' => $name, ':id' => $id]);
     }
+
+    /**
+     * Count all players.
+     */
+    public function countAll(): int
+    {
+        $stmt = $this->pdo->query('SELECT COUNT(*) AS c FROM players');
+        $row = $stmt->fetch();
+        return (int)($row['c'] ?? 0);
+    }
 }
 
 
